@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Photo Booth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* height: 100vh; */
+            min-height: 100vh;
+            width: 100vw;
+           
+            background: url(https://cdn2.shopify.com/s/files/1/0203/4430/files/A2C35427-D267-43B4-AE9E-41987BCBC2D0_1024x1024.jpeg?v=1563067550);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            background-attachment: fixed;
+            font-family: Arial, sans-serif;
+            color: aliceblue;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 600px; /* Ensuring uniform width */
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: rgba(31, 37, 30, 0.9); /* Light background for readability */
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        input, textarea, button, video {
+            width: 100%; /* Ensure all elements match container width */
+            max-width: 600px;
+            padding: 12px;
+            font-size: 18px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: none;
+        }
+
+        button {
+            background: #ff73e1;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #3b112b;
+        }
+
+        video {
+            width: 600px; 
+            height: 600px;
+            margin-bottom: 10px;
+            display: block;
+            border-radius: 8px;
+            filter: sepia(0.8) contrast(1.2) brightness(0.9);
+        }
+
+        #filmstrip-container {
+            background: #f8f1e4;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            width: 300px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- First Page: Name Input -->
+    <div id="page1" class="container">
+        <h1>Enter your name</h1>
+        <input type="text" id="username" placeholder="Your Name">
+        <button onclick="startCapture()">Capture</button>
+    </div>
+    
+    <!-- Second Page: Camera Capture -->
+    <div id="page2" class="container hidden">
+        <h1 id="greeting"></h1>
+        <video id="camera" autoplay></video>
+        <button id="captureBtn">Capture</button>
+        <div id="filmstrip-container">
+            <div id="filmstrip"></div>
+        </div>
+        <button onclick="goToNotes()">>>3</button>
+    </div>
+    
+    <!-- Third Page: Note Input and Final Download -->
+    <div id="page3" class="container hidden">
+        <h1>Add a Note</h1>
+        <textarea id="userNote" placeholder="Write a small note..."></textarea>
+        <button onclick="generateFinalFilmstrip()">Print</button>
+    </div>
+
+
+    <script>
+        let username = "";
+        let images = [];
+        
+        function startCapture() {
+            username = document.getElementById("username").value;
+            if (!username) return alert("Please enter your name");
+            document.getElementById("page1").classList.add("hidden");
+            document.getElementById("page2").classList.remove("hidden");
+            document.getElementById("greeting").textContent = "Smile, " + username + "!";
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                document.getElementById('camera').srcObject = stream;
+            });
+        }
+        
+        document.getElementById("captureBtn").addEventListener("click", () => {
+            if (images.length >= 3) return;
+            const canvas = document.createElement("canvas");
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext("2d");
+            ctx.filter = "sepia(0.8) contrast(1.2) brightness(0.9)";
+            ctx.drawImage(document.getElementById("camera"), 0, 0, canvas.width, canvas.height);
+            document.getElementById("filmstrip").appendChild(canvas);
+            images.push(canvas);
+        });
+        
+        function goToNotes() {
+            if (images.length < 3) return alert("Capture 3 images first");
+            document.getElementById("page2").classList.add("hidden");
+            document.getElementById("page3").classList.remove("hidden");
+        }
+        
+        function generateFinalFilmstrip() {
+            const note = document.getElementById("userNote").value;
+            const finalCanvas = document.createElement("canvas");
+            finalCanvas.width = 200;
+            finalCanvas.height = 660;
+            const ctx = finalCanvas.getContext("2d");
+            ctx.fillStyle = "#f8f1e4";
+            ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+            images.forEach((img, index) => {
+                ctx.drawImage(img, 0, index * 210);
+            });
+            ctx.font = "14px cursive";
+            ctx.fillStyle = "brown";
+            ctx.fillText(note, 10, 640);
+            ctx.fillText(new Date().toLocaleDateString(), 10, 660);
+            
+            const link = document.createElement("a");
+            link.href = finalCanvas.toDataURL();
+            link.download = "retro-filmstrip.png";
+            link.click();
+        }
+    </script>
+</body>
+</html>
